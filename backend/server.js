@@ -563,8 +563,8 @@ app.use(express.json());
 app.use("/api", contactRoutes);   //this one updated to use contact routes
 
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET
+  key_id: "rzp_live_SRm4r1QeQbuoSE",
+  key_secret: "oeyTcLdrl0A8244Mb5PwxjBU"
 });
 
 /*
