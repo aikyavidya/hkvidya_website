@@ -59,12 +59,7 @@
 //   console.log("Server running on port 5000")
 // );
 
-
-
-
 //implementing mysql database below
-
-
 
 // require("dotenv").config();
 // const express = require("express");
@@ -109,7 +104,7 @@
 //     console.log("Bank Razorpay amount (paise):", order.amount);
 
 //     await db.execute(
-//       `INSERT INTO donors 
+//       `INSERT INTO donors
 //        (full_name, email, phone, pan, plan_type, children_count, amount, razorpay_order_id, payment_mode)
 //        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 //       [
@@ -132,8 +127,6 @@
 //     res.status(500).json({ error: error.message });
 //   }
 // });
-
-
 
 // app.post("/create-upi-order", async (req, res) => {
 //   try {
@@ -173,8 +166,6 @@
 //     res.status(500).json({ error: err.message });
 //   }
 // });
-
-
 
 // /*
 // ===============================
@@ -220,13 +211,7 @@
 //   console.log("Server running on port 5000")
 // );
 
-
-
-
-
-
 //updated code is below
-
 
 // require("dotenv").config();
 // const express = require("express");
@@ -281,8 +266,6 @@
 //     // 🔥 Create subscription per child
 //     for (let i = 0; i < childrenCount; i++) {
 
-
-
 //       // 1. Create customer
 // const customers = await razorpay.customers.all({
 //   email: email
@@ -310,7 +293,7 @@
 
 //       // Save each subscription
 //       await db.execute(
-//         `INSERT INTO donors 
+//         `INSERT INTO donors
 //          (full_name, email, phone, pan, plan_type, children_count, amount, razorpay_subscription_id, payment_mode)
 //          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 //         [
@@ -343,12 +326,6 @@
 // app.listen(5000, () =>
 //   console.log("Server running on port 5000")
 // );
-
-
-
-
-
-
 
 // require("dotenv").config();
 // const express = require("express");
@@ -436,11 +413,11 @@
 //     if (planType === "education") {
 //       amount = 800;
 //       planId = "plan_SSedvRfVSTjI8W";
-//     } 
+//     }
 //     else if (planType === "food-education") {
 //       amount = 1000;
 //       planId = "plan_SSefAxfzZUbUS5";
-//     } 
+//     }
 //     else if (planType === "complete") {
 //       amount = 1500;
 //       planId = "plan_SSegFkIF03pob7";
@@ -506,7 +483,7 @@
 //       });
 
 //       await db.execute(
-//         `INSERT INTO donors 
+//         `INSERT INTO donors
 //          (full_name, email, phone, pan, plan_type, children_count, amount, razorpay_subscription_id, payment_mode)
 //          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 //         [
@@ -540,31 +517,24 @@
 //   console.log("Server running on port 5000")
 // );
 
-
-
-
-
-
-
-
-require("dotenv").config();
+// require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const Razorpay = require("razorpay");
 const db = require("./config/db");
 
 // Contact form dependencies
-const contactRoutes = require("./routes/contactRoutes");  // this one is updated to import contact routes
+const contactRoutes = require("./routes/contactRoutes"); // this one is updated to import contact routes
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use("/api", contactRoutes);   //this one updated to use contact routes
+app.use("/api", contactRoutes); //this one updated to use contact routes
 
 const razorpay = new Razorpay({
   key_id: "rzp_live_SRm4r1QeQbuoSE",
-  key_secret: "oeyTcLdrl0A8244Mb5PwxjBU"
+  key_secret: "oeyTcLdrl0A8244Mb5PwxjBU",
 });
 
 /*
@@ -580,9 +550,7 @@ const getOrCreatePlan = async (amount) => {
   const plans = await razorpay.plans.all({ count: 100 });
 
   const existingPlan = plans.items.find(
-    (p) =>
-      p.item.amount === amountInPaise &&
-      p.period === "monthly"
+    (p) => p.item.amount === amountInPaise && p.period === "monthly",
   );
 
   if (existingPlan) {
@@ -598,8 +566,8 @@ const getOrCreatePlan = async (amount) => {
       name: `Monthly Donation ₹${amount}`,
       amount: amountInPaise,
       currency: "INR",
-      description: "Monthly donation subscription"
-    }
+      description: "Monthly donation subscription",
+    },
   });
 
   console.log("🆕 Created new plan:", newPlan.id);
@@ -622,7 +590,7 @@ app.post("/create-subscription", async (req, res) => {
       pan,
       planType,
       childrenCount,
-      customAmount
+      customAmount,
     } = req.body;
 
     let baseAmount = 0;
@@ -638,32 +606,24 @@ app.post("/create-subscription", async (req, res) => {
     if (planType === "education") {
       baseAmount = 800;
       planId = "plan_SSedvRfVSTjI8W";
-    } 
-    else if (planType === "food-education") {
+    } else if (planType === "food-education") {
       baseAmount = 1000;
       planId = "plan_SSefAxfzZUbUS5";
-    } 
-    else if (planType === "complete") {
+    } else if (planType === "complete") {
       baseAmount = 1500;
       planId = "plan_SSegFkIF03pob7";
-    }
-
-    /*
+    } else if (planType === "custom") {
+      /*
     ===============================
     CUSTOM PLAN
     ===============================
     */
-
-    else if (planType === "custom") {
-
       if (!customAmount || customAmount <= 0) {
         return res.status(400).json({ error: "Invalid custom amount" });
       }
 
       baseAmount = customAmount;
-    }
-
-    else {
+    } else {
       return res.status(400).json({ error: "Invalid plan" });
     }
 
@@ -702,7 +662,7 @@ app.post("/create-subscription", async (req, res) => {
       customer = await razorpay.customers.create({
         name: fullName,
         email,
-        contact: phone
+        contact: phone,
       });
     }
 
@@ -716,7 +676,7 @@ app.post("/create-subscription", async (req, res) => {
       plan_id: planId,
       customer_id: customer.id,
       customer_notify: 1,
-      total_count: 12
+      total_count: 12,
     });
 
     /*
@@ -735,11 +695,11 @@ app.post("/create-subscription", async (req, res) => {
         phone,
         pan,
         planType,
-        childrenCount,   // ✅ FIXED
-        finalAmount,     // ✅ FIXED (total amount)
+        childrenCount, // ✅ FIXED
+        finalAmount, // ✅ FIXED (total amount)
         subscription.id,
-        "autopay"
-      ]
+        "autopay",
+      ],
     );
 
     /*
@@ -750,9 +710,8 @@ app.post("/create-subscription", async (req, res) => {
 
     res.json({
       success: true,
-      subscriptions: [subscription]
+      subscriptions: [subscription],
     });
-
   } catch (error) {
     console.error("SUBSCRIPTION ERROR:", error);
     res.status(500).json({ error: error.message });
@@ -765,6 +724,4 @@ START SERVER
 ===============================
 */
 
-app.listen(5000, () =>
-  console.log("Server running on port 5000")
-);
+app.listen(5000, () => console.log("Server running on port 5000"));

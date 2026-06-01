@@ -1,0 +1,20 @@
+{
+  "name": "hkvidya_website",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aikyavidya/hkvidya_website.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/aikyavidya/hkvidya_website/issues"
+  },
+  "homepage": "https://github.com/aikyavidya/hkvidya_website#readme",
+  "description": ""
+}
