@@ -496,26 +496,6 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
           netbanking: false,
         },
 
-        config: {
-          display: {
-            blocks: {
-              upi: {
-                name: "UPI Autopay",
-                instruments: [
-                  {
-                    method: "upi",
-                    flows: ["collect"],
-                  },
-                ],
-              },
-            },
-            sequence: ["block.upi"],
-            preferences: {
-              show_default_blocks: false,
-            },
-          },
-        },
-
         handler: () => {
           toast.success("UPI Donation Started 🎉");
         },

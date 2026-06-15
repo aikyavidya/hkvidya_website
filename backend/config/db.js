@@ -1,10 +1,10 @@
-const mysql = require("mysql2");
+const mongoose = require("mongoose");
 
-const db = mysql.createPool({
-  host: "localhost",
-  user: "root",
-  password: "Satvik@12345",
-  database: "donation_db",
-});
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/hkvidya_db";
 
-module.exports = db.promise();
+mongoose
+  .connect(MONGODB_URI)
+  .then(() => console.log("✅ MongoDB Connected Successfully to:", MONGODB_URI))
+  .catch((err) => console.error("❌ MongoDB Connection Error:", err));
+
+module.exports = mongoose;

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -50,10 +50,26 @@
     --gold: 45 90% 50%;
 
     /* Gradients */
-    --gradient-saffron: linear-gradient(135deg, hsl(28 87% 52%) 0%, hsl(35 90% 60%) 100%);
-    --gradient-warm: linear-gradient(180deg, hsl(40 33% 98%) 0%, hsl(35 40% 94%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(28 87% 52% / 0.1) 0%, hsl(350 65% 35% / 0.05) 100%);
-    --gradient-maroon: linear-gradient(135deg, hsl(350 65% 35%) 0%, hsl(350 70% 28%) 100%);
+    --gradient-saffron: linear-gradient(
+      135deg,
+      hsl(28 87% 52%) 0%,
+      hsl(35 90% 60%) 100%
+    );
+    --gradient-warm: linear-gradient(
+      180deg,
+      hsl(40 33% 98%) 0%,
+      hsl(35 40% 94%) 100%
+    );
+    --gradient-hero: linear-gradient(
+      135deg,
+      hsl(28 87% 52% / 0.1) 0%,
+      hsl(350 65% 35% / 0.05) 100%
+    );
+    --gradient-maroon: linear-gradient(
+      135deg,
+      hsl(350 65% 35%) 0%,
+      hsl(350 70% 28%) 100%
+    );
 
     /* Shadows */
     --shadow-soft: 0 4px 20px -4px hsl(28 87% 52% / 0.15);
@@ -117,11 +133,16 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', sans-serif;
+    font-family: "Inter", sans-serif;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Playfair Display', serif;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Playfair Display", serif;
   }
 }
 
@@ -175,7 +196,8 @@
 }
 
 @keyframes pulse-soft {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
   }
   50% {
@@ -184,7 +206,8 @@
 }
 
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {

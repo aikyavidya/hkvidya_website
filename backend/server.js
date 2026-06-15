@@ -521,7 +521,8 @@
 const express = require("express");
 const cors = require("cors");
 const Razorpay = require("razorpay");
-const db = require("./config/db");
+require("./config/db");
+const Donation = require("./models/Donation");
 
 // Contact form dependencies
 const contactRoutes = require("./routes/contactRoutes"); // this one is updated to import contact routes
@@ -605,13 +606,10 @@ app.post("/create-subscription", async (req, res) => {
 
     if (planType === "education") {
       baseAmount = 800;
-      planId = "plan_SSedvRfVSTjI8W";
     } else if (planType === "food-education") {
       baseAmount = 1000;
-      planId = "plan_SSefAxfzZUbUS5";
     } else if (planType === "complete") {
       baseAmount = 1500;
-      planId = "plan_SSegFkIF03pob7";
     } else if (planType === "custom") {
       /*
     ===============================
@@ -641,10 +639,7 @@ app.post("/create-subscription", async (req, res) => {
     ===============================
     */
 
-    // For custom OR multi-child → dynamic plan
-    if (planType === "custom" || childrenCount > 1) {
-      planId = await getOrCreatePlan(finalAmount);
-    }
+    planId = await getOrCreatePlan(finalAmount);
 
     /*
     ===============================
@@ -685,22 +680,18 @@ app.post("/create-subscription", async (req, res) => {
     ===============================
     */
 
-    await db.execute(
-      `INSERT INTO donors 
-       (full_name, email, phone, pan, plan_type, children_count, amount, razorpay_subscription_id, payment_mode)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        fullName,
-        email,
-        phone,
-        pan,
-        planType,
-        childrenCount, // ✅ FIXED
-        finalAmount, // ✅ FIXED (total amount)
-        subscription.id,
-        "autopay",
-      ],
-    );
+    const donation = new Donation({
+      full_name: fullName,
+      email: email,
+      phone: phone,
+      pan: pan,
+      plan_type: planType,
+      children_count: childrenCount,
+      amount: finalAmount,
+      razorpay_subscription_id: subscription.id,
+      payment_mode: "autopay",
+    });
+    await donation.save();
 
     /*
     ===============================
