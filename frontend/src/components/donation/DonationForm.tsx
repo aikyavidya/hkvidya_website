@@ -15,6 +15,7 @@ const SPONSORSHIP_TIERS = [
   {
     value: "education",
     amount: 800,
+    goal: 8000,
     label: "Education",
     image: childReading,
     popular: false,
@@ -23,6 +24,7 @@ const SPONSORSHIP_TIERS = [
   {
     value: "food-education",
     amount: 1000,
+    goal: 10000,
     label: "Food & Education",
     image: childrenMeal,
     popular: true,
@@ -31,6 +33,7 @@ const SPONSORSHIP_TIERS = [
   {
     value: "complete",
     amount: 1500,
+    goal: 15000,
     label: "Complete Care",
     image: childrenActivities,
     popular: false,
@@ -39,6 +42,7 @@ const SPONSORSHIP_TIERS = [
   {
     value: "custom",
     amount: 0,
+    goal: 5000,
     label: "Custom Amount",
     image: childReading,
     popular: false,
@@ -235,49 +239,79 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
           <>
             <h2 className="text-2xl font-bold mb-6">Choose Sponsorship Plan</h2>
 
-            <div className="grid md:grid-cols-4 gap-4 mb-8">
-              {SPONSORSHIP_TIERS.map((tier) => (
-                <button
-                  key={tier.value}
-                  onClick={() => setSelectedTier(tier.value)}
-                  className={cn(
-                    "rounded-xl border-2 p-4 text-left",
-                    selectedTier === tier.value ? "border-primary" : "border-border"
-                  )}
-                >
-                  <img
-                    src={tier.image}
-                    alt={tier.label}
-                    className="h-28 w-full object-cover rounded mb-3"
-                  />
-                  <h3 className="font-bold">{tier.label}</h3>
+            <div className="grid md:grid-cols-2 gap-6 mb-6">
+              {SPONSORSHIP_TIERS.map((tier) => {
+                // TODO: replace raised values with real DB data once Razorpay payments are working
+                const raised = 0;
+                const progress =
+                  tier.goal > 0
+                    ? Math.min((raised / tier.goal) * 100, 100)
+                    : 0;
 
-                  {tier.value !== "custom" ? (
-                    <p className="text-primary font-semibold">
-                      ₹{tier.amount}/child/month
-                    </p>
-                  ) : (
-                    <p className="text-primary font-semibold">Choose Amount</p>
-                  )}
-                </button>
-              ))}
+                return (
+                  <div
+                    key={tier.value}
+                    onClick={() => setSelectedTier(tier.value)}
+                    className={cn(
+                      "rounded-xl border-2 overflow-hidden cursor-pointer transition-all",
+                      selectedTier === tier.value
+                        ? "border-orange-500"
+                        : "border-border hover:border-orange-300"
+                    )}
+                  >
+                    {/* Image — full width at top */}
+                    <img
+                      src={tier.image}
+                      alt={tier.label}
+                      className="h-40 w-full object-cover"
+                    />
+
+                    {/* Card body */}
+                    <div className="p-4">
+                      {/* Title */}
+                      <h3 className="font-bold text-base mb-3">{tier.label}</h3>
+
+                      {/* Progress bar */}
+                      <div className="mb-4">
+                        <p className="text-xs text-muted-foreground mb-1">
+                          ₹{raised.toLocaleString()} / ₹{tier.goal.toLocaleString()}
+                        </p>
+                        <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all"
+                            style={{
+                              width: `${progress}%`,
+                              backgroundColor: "#f97316",
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Bottom row: Amount LEFT — Donate Now button RIGHT */}
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-sm">
+                          {tier.value !== "custom"
+                            ? `₹${tier.amount}/month`
+                            : "Choose Amount"}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedTier(tier.value);
+                            setStep(2);
+                          }}
+                          className="bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+                        >
+                          Donate Now
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
-            {/* Custom Amount Input */}
-            {selectedTier === "custom" && (
-              <div className="mb-6">
-                <Label>Enter Monthly Amount (₹)</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={customAmount || ""}
-                  onChange={(e) => setCustomAmount(Number(e.target.value))}
-                  className="mt-2"
-                />
-              </div>
-            )}
-
-            {/* Number of Children */}
+            {/* Number of Children — shown only for non-custom plans */}
             {selectedTier !== "custom" && (
               <div className="mb-6">
                 <Label>Number of Children</Label>
@@ -300,14 +334,6 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
                 </div>
               </div>
             )}
-
-            <Button
-              className="w-full"
-              onClick={() => setStep(2)}
-              disabled={selectedTier === "custom" && customAmount <= 0}
-            >
-              Continue
-            </Button>
           </>
         )}
 
@@ -315,6 +341,20 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
         {step === 2 && (
           <>
             <h2 className="text-2xl font-bold mb-6">Your Information</h2>
+
+            {/* Custom amount input — only shown when custom plan selected */}
+            {selectedTier === "custom" && (
+              <div className="mb-6">
+                <Label>Enter Monthly Amount (₹)</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={customAmount || ""}
+                  onChange={(e) => setCustomAmount(Number(e.target.value))}
+                  className="mt-2 max-w-xs"
+                />
+              </div>
+            )}
 
             <div className="grid md:grid-cols-2 gap-6">
               <Input
@@ -347,7 +387,12 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
               </Button>
               <Button
                 onClick={() => setStep(3)}
-                disabled={!formData.fullName || !formData.email || !formData.phone}
+                disabled={
+                  !formData.fullName ||
+                  !formData.email ||
+                  !formData.phone ||
+                  (selectedTier === "custom" && customAmount <= 0)
+                }
               >
                 Continue
               </Button>
