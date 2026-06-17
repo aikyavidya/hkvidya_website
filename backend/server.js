@@ -348,7 +348,7 @@
 // ===============================
 // */
 
-// const getOrCreatePlan = async (amount) => {
+// const  = async (amount) => {
 //   const amountInPaise = amount * 100;
 
 //   // 1️⃣ Fetch existing plans
@@ -517,7 +517,7 @@
 //   console.log("Server running on port 5000")
 // );
 
-// require("dotenv").config();
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const Razorpay = require("razorpay");
@@ -534,8 +534,8 @@ app.use(express.json());
 app.use("/api", contactRoutes); //this one updated to use contact routes
 
 const razorpay = new Razorpay({
-  key_id: "rzp_live_SRm4r1QeQbuoSE",
-  key_secret: "oeyTcLdrl0A8244Mb5PwxjBU",
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
 /*
