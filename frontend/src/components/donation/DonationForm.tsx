@@ -136,19 +136,18 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
       });
 
       const data = await response.json();
-      const subscription = data.subscriptions[0];
+      const subscription = data.subscription;
 
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         subscription_id: subscription.id,
-
-        method: {
-          card: true,
-          netbanking: true,
-          upi: false,
-        },
-
+        order_id: data.order_id,
+        name: "HK Vidya",
+        description: "Monthly Donation",
         handler: buildVerifyHandler(),
+        modal: {
+          ondismiss: () => console.log("Checkout closed")
+        }
       };
 
       const rzp = new (window as any).Razorpay(options);
@@ -185,39 +184,18 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
       });
 
       const data = await response.json();
-      const subscription = data.subscriptions[0];
+      const subscription = data.subscription;
 
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         subscription_id: subscription.id,
-
-        method: {
-          upi: true,
-          card: false,
-          netbanking: false,
-        },
-
-        config: {
-          display: {
-            blocks: {
-              upi: {
-                name: "UPI Autopay",
-                instruments: [
-                  {
-                    method: "upi",
-                    flows: ["collect"],
-                  },
-                ],
-              },
-            },
-            sequence: ["block.upi"],
-            preferences: {
-              show_default_blocks: false,
-            },
-          },
-        },
-
+        order_id: data.order_id,
+        name: "HK Vidya",
+        description: "Monthly Donation",
         handler: buildVerifyHandler(),
+        modal: {
+          ondismiss: () => console.log("Checkout closed")
+        }
       };
 
       const rzp = new (window as any).Razorpay(options);
