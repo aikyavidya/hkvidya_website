@@ -184,21 +184,10 @@ app.post("/create-subscription", async (req, res) => {
       total_count: 12,
     });
 
-    // 3. CREATE ORDER: Add this to anchor the payment modal
-    const order = await razorpay.orders.create({
-      amount: finalAmount * 100, // Convert to paise
-      currency: "INR",
-      receipt: `receipt_${Date.now()}`,
-      notes: {
-        subscription_id: subscription.id
-      }
-    });
-
-    // Return both IDs to the frontend
+    // Return subscription ID to the frontend
     res.json({
       success: true,
-      subscription: subscription,
-      order_id: order.id
+      subscription: subscription
     });
   } catch (error) {
     console.error("SUBSCRIPTION ERROR:", error);

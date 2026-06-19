@@ -141,9 +141,17 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         subscription_id: subscription.id,
-        order_id: data.order_id,
         name: "HK Vidya",
         description: "Monthly Donation",
+        prefill: {
+          name: formData.fullName,
+          email: formData.email,
+          contact: formData.phone
+        },
+        hidden: {
+          contact: true,
+          email: true
+        },
         handler: buildVerifyHandler(),
         modal: {
           ondismiss: () => console.log("Checkout closed")
@@ -189,9 +197,24 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         subscription_id: subscription.id,
-        order_id: data.order_id,
         name: "HK Vidya",
         description: "Monthly Donation",
+        method: {
+          upi: true,
+          card: false,
+          netbanking: false,
+          wallet: false,
+          paylater: false,
+        },
+        prefill: {
+          name: formData.fullName,
+          email: formData.email,
+          contact: formData.phone
+        },
+        hidden: {
+          contact: true,
+          email: true
+        },
         handler: buildVerifyHandler(),
         modal: {
           ondismiss: () => console.log("Checkout closed")
