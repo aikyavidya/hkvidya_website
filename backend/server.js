@@ -153,33 +153,12 @@ app.post("/create-subscription", async (req, res) => {
 
     /*
     ===============================
-    CUSTOMER (REUSE OR CREATE)
-    ===============================
-    */
-
-    const customers = await razorpay.customers.all({ email });
-
-    let customer;
-
-    if (customers.items.length > 0) {
-      customer = customers.items[0];
-    } else {
-      customer = await razorpay.customers.create({
-        name: fullName,
-        email,
-        contact: phone,
-      });
-    }
-
-    /*
-    ===============================
     CREATE SUBSCRIPTION
     ===============================
     */
 
     const subscription = await razorpay.subscriptions.create({
       plan_id: planId,
-      customer_id: customer.id,
       customer_notify: 1,
       total_count: 12,
     });
