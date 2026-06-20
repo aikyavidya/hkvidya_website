@@ -11,6 +11,25 @@ import childrenActivities from "@/assets/children-activities.jpg";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+interface FormErrors {
+  fullName?: string;
+  email?: string;
+  phone?: string;
+  pan?: string;
+  flatHouseApartment?: string;
+  streetAreaLocality?: string;
+  pincode?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+}
+
+const validateEmail = (email: string) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+const validatePhone = (phone: string) =>
+  /^[6-9]\d{9}$/.test(phone);
+
 const SPONSORSHIP_TIERS = [
   {
     value: "education",
@@ -62,10 +81,79 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
     email: "",
     phone: "",
     pan: "",
+    flatHouseApartment: "",
+    streetAreaLocality: "",
+    pincode: "",
+    city: "",
+    state: "",
+    country: "",
   });
+  const [wants80G, setWants80G] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field as keyof FormErrors]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  const fetchPincodeDetails = async (pincode: string) => {
+    if (!/^\d{6}$/.test(pincode)) return;
+    try {
+      const res = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
+      const data = await res.json();
+      if (data[0].Status === "Success") {
+        const postOffice = data[0].PostOffice[0];
+        handleInputChange("state", postOffice.State);
+        handleInputChange("city", postOffice.District);
+        handleInputChange("country", "India");
+      }
+    } catch {
+      console.error("Pincode lookup failed");
+    }
+  };
+
+  const validateStep2 = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    if (!formData.fullName.trim())
+      newErrors.fullName = "Full name is required";
+    else if (formData.fullName.trim().length < 2)
+      newErrors.fullName = "Full name must be at least 2 characters";
+
+    if (!formData.email.trim())
+      newErrors.email = "Email is required";
+    else if (!validateEmail(formData.email))
+      newErrors.email = "Please enter a valid email address";
+
+    if (!formData.phone.trim())
+      newErrors.phone = "Phone number is required";
+    else if (!validatePhone(formData.phone))
+      newErrors.phone = "Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9";
+
+    if (formData.pan.trim() && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.pan.toUpperCase()))
+      newErrors.pan = "Please enter a valid PAN (e.g., ABCDE1234F)";
+
+    if (wants80G && totalAmount >= 500) {
+      if (!formData.flatHouseApartment.trim())
+        newErrors.flatHouseApartment = "This field is required";
+      if (!formData.streetAreaLocality.trim())
+        newErrors.streetAreaLocality = "This field is required";
+      if (!formData.pincode.trim())
+        newErrors.pincode = "Pincode is required";
+      else if (!/^\d{6}$/.test(formData.pincode))
+        newErrors.pincode = "Pincode must be 6 digits";
+      if (!formData.city.trim())
+        newErrors.city = "City is required";
+      if (!formData.state)
+        newErrors.state = "Please select a State / UT";
+      if (!formData.country.trim())
+        newErrors.country = "Country is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const currentTier = SPONSORSHIP_TIERS.find((t) => t.value === selectedTier);
@@ -357,44 +445,317 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
               </div>
             )}
 
+            {/* Row 1 & 2 */}
+            {/* Row 1 & 2 */}
             <div className="grid md:grid-cols-2 gap-6">
-              <Input
-                placeholder="Full Name"
-                value={formData.fullName}
-                onChange={(e) => handleInputChange("fullName", e.target.value)}
-              />
-              <Input
-                type="email"
-                placeholder="Email"
-                value={formData.email}
-                onChange={(e) => handleInputChange("email", e.target.value)}
-              />
-              <Input
-                type="tel"
-                placeholder="Phone"
-                value={formData.phone}
-                onChange={(e) => handleInputChange("phone", e.target.value)}
-              />
-              <Input
-                placeholder="PAN (Optional)"
-                value={formData.pan}
-                onChange={(e) => handleInputChange("pan", e.target.value)}
-              />
+              {/* Row 1 */}
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Full Name<span className="text-[#D32F2F]">*</span>
+                </label>
+                <div className="relative">
+                  <Input
+                    placeholder="Your full name"
+                    value={formData.fullName}
+                    onChange={(e) => handleInputChange("fullName", e.target.value)}
+                    className={errors.fullName ? "border-2 border-[#D32F2F] pr-8" : ""}
+                  />
+                  {errors.fullName && (
+                    <span className="absolute right-3 top-[50%] -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded-full border-2 border-[#D32F2F] bg-white text-[#D32F2F] text-xs font-bold pointer-events-none" style={{ top: '20px' }}>
+                      !
+                    </span>
+                  )}
+                </div>
+                {errors.fullName && (
+                  <p className="text-red-600 text-sm mt-1">{errors.fullName}</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Phone<span className="text-[#D32F2F]">*</span>
+                </label>
+                <div className="relative">
+                  <Input
+                    type="tel"
+                    placeholder="10-digit mobile number"
+                    value={formData.phone}
+                    onChange={(e) => handleInputChange("phone", e.target.value)}
+                    maxLength={10}
+                    className={errors.phone ? "border-2 border-[#D32F2F] pr-8" : ""}
+                  />
+                  {errors.phone && (
+                    <span className="absolute right-3 top-[50%] -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded-full border-2 border-[#D32F2F] bg-white text-[#D32F2F] text-xs font-bold pointer-events-none" style={{ top: '20px' }}>
+                      !
+                    </span>
+                  )}
+                </div>
+                {errors.phone && (
+                  <p className="text-red-600 text-sm mt-1">{errors.phone}</p>
+                )}
+              </div>
+
+              {/* Row 2 */}
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Email<span className="text-[#D32F2F]">*</span>
+                </label>
+                <div className="relative">
+                  <Input
+                    type="email"
+                    placeholder="your@email.com"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange("email", e.target.value)}
+                    className={errors.email ? "border-2 border-[#D32F2F] pr-8" : ""}
+                  />
+                  {errors.email && (
+                    <span className="absolute right-3 top-[50%] -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded-full border-2 border-[#D32F2F] bg-white text-[#D32F2F] text-xs font-bold pointer-events-none" style={{ top: '20px' }}>
+                      !
+                    </span>
+                  )}
+                </div>
+                {errors.email && (
+                  <p className="text-red-600 text-sm mt-1">{errors.email}</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  PAN (Optional)
+                </label>
+                <div className="relative">
+                  <Input
+                    placeholder="e.g. ABCDE1234F"
+                    value={formData.pan}
+                    onChange={(e) => handleInputChange("pan", e.target.value)}
+                    className={`uppercase ${errors.pan ? "border-2 border-[#D32F2F] pr-8" : ""}`}
+                  />
+                  {errors.pan && (
+                    <span className="absolute right-3 top-[50%] -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded-full border-2 border-[#D32F2F] bg-white text-[#D32F2F] text-xs font-bold pointer-events-none" style={{ top: '20px' }}>
+                      !
+                    </span>
+                  )}
+                </div>
+                {errors.pan && (
+                  <p className="text-red-600 text-sm mt-1">{errors.pan}</p>
+                )}
+              </div>
             </div>
+
+            {/* Row 3: Display category and amount */}
+            <div className="mt-8 bg-muted/50 p-4 rounded-lg border">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Selected Plan</p>
+                  <p className="font-semibold">{currentTier?.label}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Amount</p>
+                  <p className="font-semibold">₹{totalAmount}/month</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Row 4: Checkbox & Conditional Address */}
+            {(selectedTier !== "custom" || customAmount >= 500) && (
+              <div className="mt-6">
+                <label className={`flex items-center gap-2 ${totalAmount < 500 ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
+                  <input
+                    type="checkbox"
+                    checked={wants80G}
+                    onChange={(e) => setWants80G(e.target.checked)}
+                    disabled={totalAmount < 500}
+                    className="w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                  />
+                  <span className="text-sm font-medium">AFG 80G Tax Exemption available for ₹500 or more</span>
+                </label>
+
+                {totalAmount < 500 && (
+                  <p className="text-xs text-red-500 mt-1 ml-6">Minimum donation of ₹500 required for 80G exemption.</p>
+                )}
+
+                {wants80G && totalAmount >= 500 && (
+                  <div className="mt-6 space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        Address Line 1<span className="text-[#D32F2F]">*</span>
+                      </label>
+                      <div className="relative">
+                        <Input
+                          placeholder="House / Apartment / Building No."
+                          value={formData.flatHouseApartment}
+                          onChange={(e) => handleInputChange("flatHouseApartment", e.target.value)}
+                          className={errors.flatHouseApartment ? "border-2 border-[#D32F2F] pr-8" : ""}
+                        />
+                        {errors.flatHouseApartment && (
+                          <span className="absolute right-3 top-[50%] -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded-full border-2 border-[#D32F2F] bg-white text-[#D32F2F] text-xs font-bold pointer-events-none" style={{ top: '20px' }}>
+                            !
+                          </span>
+                        )}
+                      </div>
+                      {errors.flatHouseApartment && (
+                        <p className="text-red-600 text-sm mt-1">{errors.flatHouseApartment}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        Address Line 2<span className="text-[#D32F2F]">*</span>
+                      </label>
+                      <div className="relative">
+                        <Input
+                          placeholder="Street / Area / Locality"
+                          value={formData.streetAreaLocality}
+                          onChange={(e) => handleInputChange("streetAreaLocality", e.target.value)}
+                          className={errors.streetAreaLocality ? "border-2 border-[#D32F2F] pr-8" : ""}
+                        />
+                        {errors.streetAreaLocality && (
+                          <span className="absolute right-3 top-[50%] -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded-full border-2 border-[#D32F2F] bg-white text-[#D32F2F] text-xs font-bold pointer-events-none" style={{ top: '20px' }}>
+                            !
+                          </span>
+                        )}
+                      </div>
+                      {errors.streetAreaLocality && (
+                        <p className="text-red-600 text-sm mt-1">{errors.streetAreaLocality}</p>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">
+                          PIN Code<span className="text-[#D32F2F]">*</span>
+                        </label>
+                        <div className="relative">
+                          <Input
+                            placeholder="6-digit PIN code"
+                            value={formData.pincode}
+                            onChange={(e) => {
+                              handleInputChange("pincode", e.target.value);
+                              fetchPincodeDetails(e.target.value);
+                            }}
+                            className={errors.pincode ? "border-2 border-[#D32F2F] pr-8" : ""}
+                          />
+                          {errors.pincode && (
+                            <span className="absolute right-3 top-[50%] -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded-full border-2 border-[#D32F2F] bg-white text-[#D32F2F] text-xs font-bold pointer-events-none" style={{ top: '20px' }}>
+                              !
+                            </span>
+                          )}
+                        </div>
+                        {errors.pincode && (
+                          <p className="text-red-600 text-sm mt-1">{errors.pincode}</p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">
+                          City<span className="text-[#D32F2F]">*</span>
+                        </label>
+                        <div className="relative">
+                          <Input
+                            placeholder="City name"
+                            value={formData.city}
+                            onChange={(e) => handleInputChange("city", e.target.value)}
+                            className={errors.city ? "border-2 border-[#D32F2F] pr-8" : ""}
+                          />
+                          {errors.city && (
+                            <span className="absolute right-3 top-[50%] -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded-full border-2 border-[#D32F2F] bg-white text-[#D32F2F] text-xs font-bold pointer-events-none" style={{ top: '20px' }}>
+                              !
+                            </span>
+                          )}
+                        </div>
+                        {errors.city && (
+                          <p className="text-red-600 text-sm mt-1">{errors.city}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">
+                          State<span className="text-[#D32F2F]">*</span>
+                        </label>
+                        <div className="relative">
+                          <select
+                            name="state"
+                            value={formData.state}
+                            onChange={(e) => {
+                              e.target.classList.remove("text-muted-foreground");
+                              handleInputChange("state", e.target.value);
+                            }}
+                            className={`w-full px-4 py-2 rounded-md border focus:outline-none bg-white text-muted-foreground text-sm ${errors.state ? 'border-2 border-[#D32F2F] pr-10' : 'border-gray-300'}`}
+                          >
+                            <option value="">Select State / UT</option>
+                            <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                            <option value="Andhra Pradesh">Andhra Pradesh</option>
+                            <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                            <option value="Assam">Assam</option>
+                            <option value="Bihar">Bihar</option>
+                            <option value="Chandigarh">Chandigarh</option>
+                            <option value="Chhattisgarh">Chhattisgarh</option>
+                            <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+                            <option value="Delhi">Delhi</option>
+                            <option value="Goa">Goa</option>
+                            <option value="Gujarat">Gujarat</option>
+                            <option value="Haryana">Haryana</option>
+                            <option value="Himachal Pradesh">Himachal Pradesh</option>
+                            <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                            <option value="Jharkhand">Jharkhand</option>
+                            <option value="Karnataka">Karnataka</option>
+                            <option value="Kerala">Kerala</option>
+                            <option value="Ladakh">Ladakh</option>
+                            <option value="Lakshadweep">Lakshadweep</option>
+                            <option value="Madhya Pradesh">Madhya Pradesh</option>
+                            <option value="Maharashtra">Maharashtra</option>
+                            <option value="Manipur">Manipur</option>
+                            <option value="Meghalaya">Meghalaya</option>
+                            <option value="Mizoram">Mizoram</option>
+                            <option value="Nagaland">Nagaland</option>
+                            <option value="Odisha">Odisha</option>
+                            <option value="Puducherry">Puducherry</option>
+                            <option value="Punjab">Punjab</option>
+                            <option value="Rajasthan">Rajasthan</option>
+                            <option value="Sikkim">Sikkim</option>
+                            <option value="Tamil Nadu">Tamil Nadu</option>
+                            <option value="Telangana">Telangana</option>
+                            <option value="Tripura">Tripura</option>
+                            <option value="Uttar Pradesh">Uttar Pradesh</option>
+                            <option value="Uttarakhand">Uttarakhand</option>
+                            <option value="West Bengal">West Bengal</option>
+                          </select>
+                          {errors.state && (
+                            <span className="absolute right-8 top-1/2 -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded-full border-2 border-[#D32F2F] bg-white text-[#D32F2F] text-xs font-bold pointer-events-none">!</span>
+                          )}
+                        </div>
+                        {errors.state && (
+                          <p className="text-red-600 text-sm mt-1">{errors.state}</p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">
+                          Country<span className="text-[#D32F2F]">*</span>
+                        </label>
+                        <div className="relative">
+                          <Input
+                            placeholder="Country name"
+                            value={formData.country}
+                            onChange={(e) => handleInputChange("country", e.target.value)}
+                            className={errors.country ? "border-2 border-[#D32F2F] pr-8" : ""}
+                          />
+                          {errors.country && (
+                            <span className="absolute right-3 top-[50%] -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded-full border-2 border-[#D32F2F] bg-white text-[#D32F2F] text-xs font-bold pointer-events-none" style={{ top: '20px' }}>
+                              !
+                            </span>
+                          )}
+                        </div>
+                        {errors.country && (
+                          <p className="text-red-600 text-sm mt-1">{errors.country}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="flex gap-4 mt-8">
               <Button variant="outline" onClick={() => setStep(1)}>
                 Back
               </Button>
-              <Button
-                onClick={() => setStep(3)}
-                disabled={
-                  !formData.fullName ||
-                  !formData.email ||
-                  !formData.phone ||
-                  (selectedTier === "custom" && customAmount <= 0)
-                }
-              >
+              <Button onClick={() => { if (validateStep2()) setStep(3); }}>
                 Continue
               </Button>
             </div>
