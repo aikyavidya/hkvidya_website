@@ -15,13 +15,14 @@ interface FormErrors {
   fullName?: string;
   email?: string;
   phone?: string;
+  areaOfStay?: string;
   pan?: string;
   flatHouseApartment?: string;
   streetAreaLocality?: string;
   pincode?: string;
   city?: string;
-  state?: string;
   country?: string;
+  locality?: string;
 }
 
 const validateEmail = (email: string) =>
@@ -76,10 +77,12 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
   const [customAmount, setCustomAmount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
 
+  const [localityOptions, setLocalityOptions] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
     phone: "",
+    areaOfStay: "",
     pan: "",
     flatHouseApartment: "",
     streetAreaLocality: "",
@@ -87,6 +90,7 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
     city: "",
     state: "",
     country: "",
+    locality: "",
   });
   const [wants80G, setWants80G] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -104,10 +108,14 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
       const res = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
       const data = await res.json();
       if (data[0].Status === "Success") {
-        const postOffice = data[0].PostOffice[0];
+        const postOffices = data[0].PostOffice;
+        const areaNames = postOffices.map((po: any) => po.Name);
+        setLocalityOptions(areaNames);
+        const postOffice = postOffices[0];
         handleInputChange("state", postOffice.State);
         handleInputChange("city", postOffice.District);
         handleInputChange("country", "India");
+        handleInputChange("locality", areaNames[0]);
       }
     } catch {
       console.error("Pincode lookup failed");
@@ -132,10 +140,17 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
     else if (!validatePhone(formData.phone))
       newErrors.phone = "Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9";
 
-    if (formData.pan.trim() && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.pan.toUpperCase()))
-      newErrors.pan = "Please enter a valid PAN (e.g., ABCDE1234F)";
+    if (!formData.areaOfStay.trim())
+      newErrors.areaOfStay = "Area of stay is required";
+    else if (formData.areaOfStay.trim().length < 2)
+      newErrors.areaOfStay = "Please enter a valid area name";
 
     if (wants80G && totalAmount >= 500) {
+      if (!formData.pan.trim())
+        newErrors.pan = "PAN is required for 80G tax exemption";
+      else if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.pan.toUpperCase()))
+        newErrors.pan = "Please enter a valid PAN (e.g., ABCDE1234F)";
+
       if (!formData.flatHouseApartment.trim())
         newErrors.flatHouseApartment = "This field is required";
       if (!formData.streetAreaLocality.trim())
@@ -150,6 +165,8 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
         newErrors.state = "Please select a State / UT";
       if (!formData.country.trim())
         newErrors.country = "Country is required";
+      if (!formData.locality)
+        newErrors.locality = "Please select a Locality / Area";
     }
 
     setErrors(newErrors);
@@ -519,23 +536,23 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">
-                  PAN (Optional)
+                  Area of Stay<span className="text-[#D32F2F]">*</span>
                 </label>
                 <div className="relative">
                   <Input
-                    placeholder="e.g. ABCDE1234F"
-                    value={formData.pan}
-                    onChange={(e) => handleInputChange("pan", e.target.value)}
-                    className={`uppercase ${errors.pan ? "border-2 border-[#D32F2F] pr-8" : ""}`}
+                    placeholder="Your city or area"
+                    value={formData.areaOfStay}
+                    onChange={(e) => handleInputChange("areaOfStay", e.target.value)}
+                    className={errors.areaOfStay ? "border-2 border-[#D32F2F] pr-8" : ""}
                   />
-                  {errors.pan && (
+                  {errors.areaOfStay && (
                     <span className="absolute right-3 top-[50%] -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded-full border-2 border-[#D32F2F] bg-white text-[#D32F2F] text-xs font-bold pointer-events-none" style={{ top: '20px' }}>
                       !
                     </span>
                   )}
                 </div>
-                {errors.pan && (
-                  <p className="text-red-600 text-sm mt-1">{errors.pan}</p>
+                {errors.areaOfStay && (
+                  <p className="text-red-600 text-sm mt-1">{errors.areaOfStay}</p>
                 )}
               </div>
             </div>
@@ -574,49 +591,74 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
 
                 {wants80G && totalAmount >= 500 && (
                   <div className="mt-6 space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Address Line 1<span className="text-[#D32F2F]">*</span>
-                      </label>
-                      <div className="relative">
-                        <Input
-                          placeholder="House / Apartment / Building No."
-                          value={formData.flatHouseApartment}
-                          onChange={(e) => handleInputChange("flatHouseApartment", e.target.value)}
-                          className={errors.flatHouseApartment ? "border-2 border-[#D32F2F] pr-8" : ""}
-                        />
-                        {errors.flatHouseApartment && (
-                          <span className="absolute right-3 top-[50%] -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded-full border-2 border-[#D32F2F] bg-white text-[#D32F2F] text-xs font-bold pointer-events-none" style={{ top: '20px' }}>
-                            !
-                          </span>
-                        )}
-                      </div>
-                      {errors.flatHouseApartment && (
-                        <p className="text-red-600 text-sm mt-1">{errors.flatHouseApartment}</p>
-                      )}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Address Line 2<span className="text-[#D32F2F]">*</span>
-                      </label>
-                      <div className="relative">
-                        <Input
-                          placeholder="Street / Area / Locality"
-                          value={formData.streetAreaLocality}
-                          onChange={(e) => handleInputChange("streetAreaLocality", e.target.value)}
-                          className={errors.streetAreaLocality ? "border-2 border-[#D32F2F] pr-8" : ""}
-                        />
-                        {errors.streetAreaLocality && (
-                          <span className="absolute right-3 top-[50%] -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded-full border-2 border-[#D32F2F] bg-white text-[#D32F2F] text-xs font-bold pointer-events-none" style={{ top: '20px' }}>
-                            !
-                          </span>
-                        )}
-                      </div>
-                      {errors.streetAreaLocality && (
-                        <p className="text-red-600 text-sm mt-1">{errors.streetAreaLocality}</p>
-                      )}
-                    </div>
+
+                    {/* Row 1: PAN | Address Line 1 */}
                     <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">
+                          PAN<span className="text-[#D32F2F]">*</span>
+                        </label>
+                        <div className="relative">
+                          <Input
+                            placeholder="e.g. ABCDE1234F"
+                            value={formData.pan}
+                            onChange={(e) => handleInputChange("pan", e.target.value)}
+                            className={`uppercase ${errors.pan ? "border-2 border-[#D32F2F] pr-8" : ""}`}
+                          />
+                          {errors.pan && (
+                            <span className="absolute right-3 top-[50%] -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded-full border-2 border-[#D32F2F] bg-white text-[#D32F2F] text-xs font-bold pointer-events-none" style={{ top: '20px' }}>!</span>
+                          )}
+                        </div>
+                        {errors.pan && <p className="text-red-600 text-sm mt-1">{errors.pan}</p>}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium mb-1">
+                          Address Line 1<span className="text-[#D32F2F]">*</span>
+                        </label>
+                        <div className="relative">
+                          <Input
+                            placeholder="House / Apartment / Building No."
+                            value={formData.flatHouseApartment}
+                            onChange={(e) => handleInputChange("flatHouseApartment", e.target.value)}
+                            className={errors.flatHouseApartment ? "border-2 border-[#D32F2F] pr-8" : ""}
+                          />
+                          {errors.flatHouseApartment && (
+                            <span className="absolute right-3 top-[50%] -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded-full border-2 border-[#D32F2F] bg-white text-[#D32F2F] text-xs font-bold pointer-events-none" style={{ top: '20px' }}>
+                              !
+                            </span>
+                          )}
+                        </div>
+                        {errors.flatHouseApartment && (
+                          <p className="text-red-600 text-sm mt-1">{errors.flatHouseApartment}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Row 2: Address Line 2 | PIN Code */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">
+                          Address Line 2<span className="text-[#D32F2F]">*</span>
+                        </label>
+                        <div className="relative">
+                          <Input
+                            placeholder="Street / Area / Locality"
+                            value={formData.streetAreaLocality}
+                            onChange={(e) => handleInputChange("streetAreaLocality", e.target.value)}
+                            className={errors.streetAreaLocality ? "border-2 border-[#D32F2F] pr-8" : ""}
+                          />
+                          {errors.streetAreaLocality && (
+                            <span className="absolute right-3 top-[50%] -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded-full border-2 border-[#D32F2F] bg-white text-[#D32F2F] text-xs font-bold pointer-events-none" style={{ top: '20px' }}>
+                              !
+                            </span>
+                          )}
+                        </div>
+                        {errors.streetAreaLocality && (
+                          <p className="text-red-600 text-sm mt-1">{errors.streetAreaLocality}</p>
+                        )}
+                      </div>
+
                       <div>
                         <label className="block text-sm font-medium mb-1">
                           PIN Code<span className="text-[#D32F2F]">*</span>
@@ -641,6 +683,10 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
                           <p className="text-red-600 text-sm mt-1">{errors.pincode}</p>
                         )}
                       </div>
+                    </div>
+
+                    {/* Row 3: City | Locality/Area */}
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium mb-1">
                           City<span className="text-[#D32F2F]">*</span>
@@ -662,7 +708,34 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
                           <p className="text-red-600 text-sm mt-1">{errors.city}</p>
                         )}
                       </div>
+
+                      <div>
+                        <label className="block text-sm font-medium mb-1">
+                          Locality/Area<span className="text-[#D32F2F]">*</span>
+                        </label>
+                        <div className="relative">
+                          <select
+                            value={formData.locality}
+                            onChange={(e) => handleInputChange("locality", e.target.value)}
+                            className={`w-full px-4 py-2 rounded-md border focus:outline-none bg-white text-sm ${errors.locality ? 'border-2 border-[#D32F2F] pr-10' : 'border-gray-300'}`}
+                          >
+                            {localityOptions.length === 0 ? (
+                              <option value="">Select Locality / Area</option>
+                            ) : (
+                              localityOptions.map((area) => (
+                                <option key={area} value={area}>{area}</option>
+                              ))
+                            )}
+                          </select>
+                          {errors.locality && (
+                            <span className="absolute right-8 top-1/2 -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded-full border-2 border-[#D32F2F] bg-white text-[#D32F2F] text-xs font-bold pointer-events-none">!</span>
+                          )}
+                        </div>
+                        {errors.locality && <p className="text-red-600 text-sm mt-1">{errors.locality}</p>}
+                      </div>
                     </div>
+
+                    {/* Row 4: State | Country */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium mb-1">
