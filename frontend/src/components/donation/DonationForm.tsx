@@ -11,7 +11,7 @@ import childrenActivities from "@/assets/children-activities.jpg";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const MIN_80G_AMOUNT = 1; // ⚠️ TEMPORARY FOR TESTING — REVERT TO 500 AFTER TEST
+const MIN_80G_AMOUNT = 1000;
 
 interface FormErrors {
   fullName?: string;
@@ -594,11 +594,11 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
                     disabled={totalAmount < MIN_80G_AMOUNT}
                     className="w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
                   />
-                  <span className="text-sm font-medium">AFG 80G Tax Exemption available for ₹{MIN_80G_AMOUNT} or more</span>
+                  <span className="text-sm font-medium">I wish to receive 80G Tax Exemption</span>
                 </label>
 
                 {totalAmount < MIN_80G_AMOUNT && (
-                  <p className="text-xs text-red-500 mt-1 ml-6">Minimum donation of ₹{MIN_80G_AMOUNT} required for 80G exemption.</p>
+                  <p className="text-xs text-red-500 mt-1 ml-6">80G Tax Exemption is available only for donations of ₹{MIN_80G_AMOUNT} or more.</p>
                 )}
 
                 {wants80G && totalAmount >= MIN_80G_AMOUNT && (
