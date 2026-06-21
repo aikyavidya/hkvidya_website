@@ -11,6 +11,8 @@ import childrenActivities from "@/assets/children-activities.jpg";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+const MIN_80G_AMOUNT = 1; // ⚠️ TEMPORARY FOR TESTING — REVERT TO 500 AFTER TEST
+
 interface FormErrors {
   fullName?: string;
   email?: string;
@@ -146,7 +148,7 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
     else if (formData.areaOfStay.trim().length < 2)
       newErrors.areaOfStay = "Please enter a valid area name";
 
-    if (wants80G && totalAmount >= 500) {
+    if (wants80G && totalAmount >= MIN_80G_AMOUNT) {
       if (!formData.pan.trim())
         newErrors.pan = "PAN is required for 80G tax exemption";
       else if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.pan.toUpperCase()))
@@ -582,24 +584,24 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
             </div>
 
             {/* Row 4: Checkbox & Conditional Address */}
-            {(selectedTier !== "custom" || customAmount >= 500) && (
+            {(selectedTier !== "custom" || customAmount >= MIN_80G_AMOUNT) && (
               <div className="mt-6">
-                <label className={`flex items-center gap-2 ${totalAmount < 500 ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
+                <label className={`flex items-center gap-2 ${totalAmount < MIN_80G_AMOUNT ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
                   <input
                     type="checkbox"
                     checked={wants80G}
                     onChange={(e) => setWants80G(e.target.checked)}
-                    disabled={totalAmount < 500}
+                    disabled={totalAmount < MIN_80G_AMOUNT}
                     className="w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
                   />
-                  <span className="text-sm font-medium">AFG 80G Tax Exemption available for ₹500 or more</span>
+                  <span className="text-sm font-medium">AFG 80G Tax Exemption available for ₹{MIN_80G_AMOUNT} or more</span>
                 </label>
 
-                {totalAmount < 500 && (
-                  <p className="text-xs text-red-500 mt-1 ml-6">Minimum donation of ₹500 required for 80G exemption.</p>
+                {totalAmount < MIN_80G_AMOUNT && (
+                  <p className="text-xs text-red-500 mt-1 ml-6">Minimum donation of ₹{MIN_80G_AMOUNT} required for 80G exemption.</p>
                 )}
 
-                {wants80G && totalAmount >= 500 && (
+                {wants80G && totalAmount >= MIN_80G_AMOUNT && (
                   <div className="mt-6 space-y-4">
 
                     {/* Row 1: PAN | Address Line 1 */}
