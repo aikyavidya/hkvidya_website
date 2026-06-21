@@ -21,6 +21,7 @@ interface FormErrors {
   streetAreaLocality?: string;
   pincode?: string;
   city?: string;
+  state?: string;
   country?: string;
   locality?: string;
 }
@@ -203,6 +204,15 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
           childrenCount: numberOfChildren,
           customAmount: selectedTier === "custom" ? customAmount : null,
           amount: totalAmount,
+          areaOfStay: formData.areaOfStay,
+          addressLine1: formData.flatHouseApartment,
+          addressLine2: formData.streetAreaLocality,
+          pincode: formData.pincode,
+          city: formData.city,
+          locality: formData.locality,
+          state: formData.state,
+          country: formData.country,
+          wants80G: wants80G,
         }),
       });
       const verifyData = await verifyRes.json();

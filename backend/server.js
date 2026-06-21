@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const crypto = require("crypto");
 const Razorpay = require("razorpay");
+const mongoose = require("mongoose");
 require("./config/db");
 const Donation = require("./models/Donation");
 
@@ -195,6 +196,15 @@ app.post("/verify-subscription", async (req, res) => {
       childrenCount,
       customAmount,
       amount,
+      areaOfStay,
+      addressLine1,
+      addressLine2,
+      pincode,
+      city,
+      locality,
+      state,
+      country,
+      wants80G,
     } = req.body;
 
     // Verify Razorpay signature
@@ -217,11 +227,21 @@ app.post("/verify-subscription", async (req, res) => {
       plan_type: planType,
       children_count: childrenCount,
       amount: amount,
+      area_of_stay: areaOfStay,
+      address_line_1: addressLine1,
+      address_line_2: addressLine2,
+      pincode: pincode,
+      city: city,
+      locality: locality,
+      state: state,
+      country: country,
+      wants_80g: wants80G,
       razorpay_subscription_id: razorpay_subscription_id,
       payment_mode: "autopay",
       payment_status: "active",
     });
     await donation.save();
+    console.log("✅ DONATION SAVED — ID:", donation._id, "to DB:", mongoose.connection.db.databaseName, "on host:", mongoose.connection.host);
 
     res.json({ success: true });
   } catch (error) {
