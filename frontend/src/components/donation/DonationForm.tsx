@@ -11,7 +11,7 @@ import childrenActivities from "@/assets/children-activities.jpg";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const MIN_80G_AMOUNT = 1000;
+const MIN_80G_AMOUNT = 500;
 
 interface FormErrors {
   fullName?: string;
@@ -35,6 +35,7 @@ const validatePhone = (phone: string) =>
   /^[6-9]\d{9}$/.test(phone);
 
 const SPONSORSHIP_TIERS = [
+  /*
   {
     value: "education",
     amount: 800,
@@ -62,12 +63,13 @@ const SPONSORSHIP_TIERS = [
     popular: false,
     includes: ["Food", "Education", "Life skills"],
   },
+  */
   {
     value: "custom",
     amount: 0,
     goal: 5000,
-    label: "Custom Amount",
-    image: childReading,
+    label: "Food, Education and Values",
+    image: childrenMeal,
     popular: false,
     includes: ["Choose your own monthly donation"],
   },
@@ -96,6 +98,7 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
     locality: "",
   });
   const [wants80G, setWants80G] = useState(false);
+  const [wantsMahaPrasadam, setWantsMahaPrasadam] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
   const handleInputChange = (field: string, value: string) => {
@@ -355,9 +358,9 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
         {/* STEP 1 — Choose Plan */}
         {step === 1 && (
           <>
-            <h2 className="text-2xl font-bold mb-6">Choose Sponsorship Plan</h2>
+            <h2 className="text-2xl font-bold mb-6 text-center">Choose Sponsorship Plan</h2>
 
-            <div className="grid md:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 max-w-2xl mx-auto gap-6 mb-6">
               {SPONSORSHIP_TIERS.map((tier) => {
                 // TODO: replace raised values with real DB data once Razorpay payments are working
                 const raised = 0;
@@ -381,16 +384,16 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
                     <img
                       src={tier.image}
                       alt={tier.label}
-                      className="h-40 w-full object-cover"
+                      className="h-72 w-full object-cover"
                     />
 
                     {/* Card body */}
                     <div className="p-4">
                       {/* Title */}
-                      <h3 className="font-bold text-base mb-3">{tier.label}</h3>
+                      <h3 className="font-bold text-lg mb-3">{tier.label}</h3>
 
                       {/* Progress bar */}
-                      <div className="mb-4">
+                      {/* <div className="mb-4">
                         <p className="text-xs text-muted-foreground mb-1">
                           ₹{raised.toLocaleString()} / ₹{tier.goal.toLocaleString()}
                         </p>
@@ -403,11 +406,11 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
                             }}
                           />
                         </div>
-                      </div>
+                      </div> */}
 
                       {/* Bottom row: Amount LEFT — Donate Now button RIGHT */}
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-sm">
+                        <span className="font-semibold text-base">
                           {tier.value !== "custom"
                             ? `₹${tier.amount}/month`
                             : "Choose Amount"}
@@ -431,9 +434,9 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
 
             {/* Number of Children — shown only for non-custom plans */}
             {selectedTier !== "custom" && (
-              <div className="mb-6">
-                <Label>Number of Children</Label>
-                <div className="flex items-center gap-4 mt-2">
+              <div className="mb-6 flex flex-col items-center">
+                <Label className="text-center">Number of Children</Label>
+                <div className="flex items-center justify-center gap-4 mt-2">
                   <button
                     onClick={() =>
                       setNumberOfChildren(Math.max(1, numberOfChildren - 1))
@@ -586,6 +589,17 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
             {/* Row 4: Checkbox & Conditional Address */}
             {(selectedTier !== "custom" || customAmount >= MIN_80G_AMOUNT) && (
               <div className="mt-6">
+                <label className={`flex items-center gap-2 mb-3 ${totalAmount < MIN_80G_AMOUNT ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
+                  <input
+                    type="checkbox"
+                    checked={wantsMahaPrasadam}
+                    onChange={(e) => setWantsMahaPrasadam(e.target.checked)}
+                    disabled={totalAmount < MIN_80G_AMOUNT}
+                    className="w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                  />
+                  <span className="text-sm font-medium">I would like to receive Maha Prasadam (Only within India)</span>
+                </label>
+
                 <label className={`flex items-center gap-2 ${totalAmount < MIN_80G_AMOUNT ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
                   <input
                     type="checkbox"
@@ -601,7 +615,7 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
                   <p className="text-xs text-red-500 mt-1 ml-6">80G Tax Exemption is available only for donations of ₹{MIN_80G_AMOUNT} or more.</p>
                 )}
 
-                {wants80G && totalAmount >= MIN_80G_AMOUNT && (
+                {(wants80G || wantsMahaPrasadam) && totalAmount >= MIN_80G_AMOUNT && (
                   <div className="mt-6 space-y-4">
 
                     {/* Row 1: PAN | Address Line 1 */}

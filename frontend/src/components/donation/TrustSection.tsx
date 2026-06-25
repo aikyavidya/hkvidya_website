@@ -11,14 +11,9 @@ const trustBadges = [
     icon: Award,
     title: "Registered NGO",
     description: "Government registered charitable organization",
-    highlight: "Since 2008",
+    highlight: "Since 2021",
   },
-  {
-    icon: FileCheck,
-    title: "Transparent Reporting",
-    description: "Regular updates on how your donations are used",
-    highlight: "Monthly reports",
-  },
+
   {
     icon: Lock,
     title: "Secure Payments",
@@ -43,7 +38,7 @@ const TrustSection = () => {
         </div>
 
         {/* Trust Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 max-w-6xl mx-auto justify-center">
           {trustBadges.map((badge, index) => (
             <div
               key={badge.title}

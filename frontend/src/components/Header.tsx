@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import logo from "../assets/hkvidya-updated-logo.png";
 import { Heart, Menu, X, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -39,8 +40,7 @@ const Header = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
-            <Heart className="w-7 h-7 text-primary group-hover:scale-110 transition-transform" />
-            <span className="font-display text-xl font-bold text-foreground">HK Vidya</span>
+            <img src={logo} alt="HK Vidya Logo" className="h-14 w-auto object-contain group-hover:scale-105 transition-transform" />
           </Link>
 
           {/* Desktop Navigation */}

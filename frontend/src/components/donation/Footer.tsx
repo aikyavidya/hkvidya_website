@@ -86,9 +86,9 @@ const Footer = () => {
           <div>
             <h3 className="font-display font-semibold text-lg mb-4">Contact Us</h3>
             <div className="space-y-3 text-sm">
-              <a href="harekrishnavidya@hkmhyderabad.org" className="flex items-center gap-2 text-background/70 hover:text-primary transition-colors">
+              <a href="mailto:connect@harekrishnavidya.org" className="flex items-center gap-2 text-background/70 hover:text-primary transition-colors">
                 <Mail className="w-4 h-4" />
-                harekrishnavidya@hkmhyderabad.org
+                connect@harekrishnavidya.org
               </a>
               <a href="tel:+917207619870" className="flex items-center gap-2 text-background/70 hover:text-primary transition-colors">
                 <Phone className="w-4 h-4" />
