@@ -351,6 +351,59 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
     }
   };
 
+  /*
+  ===========================
+  TEST — ₹1 SUBSCRIPTION
+  (TEMPORARY — remove after testing)
+  ===========================
+  */
+  const startTestSubscription = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/create-test-subscription`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await response.json();
+      const subscription = data.subscription;
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        subscription_id: subscription.id,
+        name: "HK Vidya",
+        description: "Test ₹1 Subscription (8 days)",
+        prefill: {
+          name: "Test User",
+          email: "test@hkvidya.org",
+          contact: "9999999999"
+        },
+        handler: async (response: any) => {
+          console.log("✅ Test payment done:", response);
+          alert(
+            "✅ Test subscription created!\n\n" +
+            "Payment ID: " + response.razorpay_payment_id + "\n" +
+            "Subscription ID: " + response.razorpay_subscription_id + "\n\n" +
+            "Check MongoDB — a new Donation record should appear.\n" +
+            "In 8 days, check again — recurring_payments array should have a new entry."
+          );
+        },
+        modal: {
+          ondismiss: () => console.log("Test checkout closed")
+        }
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
+
+    } catch (error) {
+      console.error(error);
+      alert("Test subscription failed. Check console.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <section className="py-16 bg-background">
       <div className="container max-w-4xl mx-auto px-4">
@@ -902,6 +955,14 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
                   {isLoading ? "Processing..." : "Donate via UPI"}
                 </Button>
               )}
+
+              <Button
+                onClick={startTestSubscription}
+                disabled={isLoading}
+                className="bg-gray-700 hover:bg-gray-800 text-white text-xs"
+              >
+                {isLoading ? "Processing..." : "🧪 Test ₹1 Subscription"}
+              </Button>
             </div>
           </>
         )}

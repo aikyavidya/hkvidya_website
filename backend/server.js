@@ -235,6 +235,59 @@ app.post("/create-subscription", async (req, res) => {
 
 /*
 ===============================
+TEST ROUTE — ₹1 EVERY 8 DAYS
+(TEMPORARY — remove after testing)
+===============================
+*/
+app.post("/create-test-subscription", async (req, res) => {
+  try {
+    // Step 1: Check if a ₹1 daily test plan already exists
+    const plans = await razorpay.plans.all({ count: 100 });
+    const existingPlan = plans.items.find(
+      (p) => p.item.amount === 100 && p.period === "daily"
+    );
+
+    let planId;
+
+    if (existingPlan) {
+      console.log("✅ Reusing existing test plan:", existingPlan.id);
+      planId = existingPlan.id;
+    } else {
+      // Step 2: Create new ₹1 daily plan with interval 8
+      const newPlan = await razorpay.plans.create({
+        period: "daily",
+        interval: 8,
+        item: {
+          name: "Test Subscription ₹1",
+          amount: 100,
+          currency: "INR",
+          description: "Testing recurring deduction every 8 days",
+        },
+      });
+      console.log("🆕 Created new test plan:", newPlan.id);
+      planId = newPlan.id;
+    }
+
+    // Step 3: Create subscription on that plan
+    // total_count: 3 means it will charge 3 times total
+    // (day 0, day 8, day 16) — enough to confirm 2 recurring cuts
+    const subscription = await razorpay.subscriptions.create({
+      plan_id: planId,
+      customer_notify: 1,
+      total_count: 3,
+    });
+
+    console.log("🆕 Test subscription created:", subscription.id);
+    res.json({ success: true, subscription });
+
+  } catch (error) {
+    console.error("TEST SUBSCRIPTION ERROR:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/*
+===============================
 VERIFY SUBSCRIPTION + SAVE TO DB
 (Called by frontend after Razorpay payment handler fires)
 ===============================
