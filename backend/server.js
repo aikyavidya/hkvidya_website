@@ -61,10 +61,48 @@ app.use(
     }
 
     if (event.event === "payment.failed") {
-      console.log(
-        "❌ Payment failed:",
-        event.payload.payment.entity.id
-      );
+      const paymentId = event.payload.payment.entity.id;
+      const subscriptionId = event.payload.payment.entity.subscription_id;
+      console.log("❌ Payment failed:", paymentId, "| Subscription:", subscriptionId);
+      if (subscriptionId) {
+        try {
+          await Donation.findOneAndUpdate(
+            { razorpay_subscription_id: subscriptionId },
+            { $set: { payment_status: "payment_failed" } }
+          );
+          console.log("⚠️ Donation status updated to payment_failed for:", subscriptionId);
+        } catch (err) {
+          console.error("❌ Failed to update payment_failed status:", err.message);
+        }
+      }
+    }
+
+    if (event.event === "subscription.halted") {
+      const subscriptionId = event.payload.subscription.entity.id;
+      console.log("🛑 Subscription halted:", subscriptionId);
+      try {
+        await Donation.findOneAndUpdate(
+          { razorpay_subscription_id: subscriptionId },
+          { $set: { payment_status: "halted" } }
+        );
+        console.log("⚠️ Donation status updated to halted for:", subscriptionId);
+      } catch (err) {
+        console.error("❌ Failed to update halted status:", err.message);
+      }
+    }
+
+    if (event.event === "subscription.cancelled") {
+      const subscriptionId = event.payload.subscription.entity.id;
+      console.log("🚫 Subscription cancelled:", subscriptionId);
+      try {
+        await Donation.findOneAndUpdate(
+          { razorpay_subscription_id: subscriptionId },
+          { $set: { payment_status: "cancelled" } }
+        );
+        console.log("⚠️ Donation status updated to cancelled for:", subscriptionId);
+      } catch (err) {
+        console.error("❌ Failed to update cancelled status:", err.message);
+      }
     }
 
     res.json({ status: "ok" });
