@@ -17,7 +17,7 @@ app.use(cors());
 app.use(
   "/webhook",
   express.raw({ type: "application/json" }),
-  (req, res) => {
+  async (req, res) => {
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
     const signature = req.headers["x-razorpay-signature"];
     const body = req.body;
@@ -34,10 +34,30 @@ app.use(
     const event = JSON.parse(body);
 
     if (event.event === "subscription.charged") {
-      console.log(
-        "✅ Subscription charged:",
-        event.payload.subscription.entity.id
-      );
+      const subscriptionId = event.payload.subscription.entity.id;
+      const paymentId = event.payload.payment.entity.id;
+      const chargedAmount = event.payload.payment.entity.amount / 100;
+
+      console.log("✅ Subscription charged:", subscriptionId, "| Payment:", paymentId, "| Amount: ₹" + chargedAmount);
+
+      try {
+        await Donation.findOneAndUpdate(
+          { razorpay_subscription_id: subscriptionId },
+          {
+            $set: { payment_status: "active" },
+            $push: {
+              recurring_payments: {
+                payment_id: paymentId,
+                amount: chargedAmount,
+                charged_at: new Date()
+              }
+            }
+          }
+        );
+        console.log("✅ Recurring payment recorded for subscription:", subscriptionId);
+      } catch (err) {
+        console.error("❌ Failed to record recurring payment:", err.message);
+      }
     }
 
     if (event.event === "payment.failed") {
