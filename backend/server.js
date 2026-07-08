@@ -219,7 +219,7 @@ app.post("/create-subscription", async (req, res) => {
     const subscription = await razorpay.subscriptions.create({
       plan_id: planId,
       customer_notify: 1,
-      total_count: 12,
+      total_count: 1200,
     });
 
     // Return subscription ID to the frontend
