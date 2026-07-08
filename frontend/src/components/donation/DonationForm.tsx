@@ -380,13 +380,49 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
         },
         handler: async (response: any) => {
           console.log("✅ Test payment done:", response);
-          alert(
-            "✅ Test subscription created!\n\n" +
-            "Payment ID: " + response.razorpay_payment_id + "\n" +
-            "Subscription ID: " + response.razorpay_subscription_id + "\n\n" +
-            "Check MongoDB — a new Donation record should appear.\n" +
-            "In 8 days, check again — recurring_payments array should have a new entry."
-          );
+          try {
+            const verifyRes = await fetch(`${API_URL}/verify-subscription`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_subscription_id: response.razorpay_subscription_id,
+                razorpay_signature: response.razorpay_signature,
+                fullName: "Test User",
+                email: "takkitiprekshithreddy@gmail.com",
+                phone: "9100181264",
+                pan: "",
+                planType: "custom",
+                childrenCount: 1,
+                customAmount: 1,
+                amount: 1,
+                areaOfStay: "Hyderabad",
+                addressLine1: "",
+                addressLine2: "",
+                pincode: "",
+                city: "Hyderabad",
+                locality: "",
+                state: "Telangana",
+                country: "India",
+                wants80G: false,
+              }),
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyData.success) {
+              alert(
+                "✅ Test subscription saved to MongoDB!\n\n" +
+                "Payment ID: " + response.razorpay_payment_id + "\n" +
+                "Subscription ID: " + response.razorpay_subscription_id + "\n\n" +
+                "Check MongoDB hkvidya_db → donations collection.\n" +
+                "In 8 days, recurring_payments array should have a new entry."
+              );
+            } else {
+              alert("⚠️ Payment done but DB save failed. Check PM2 logs.");
+            }
+          } catch (err) {
+            console.error("Test verify error:", err);
+            alert("⚠️ Payment done but verify call failed. Check console.");
+          }
         },
         modal: {
           ondismiss: () => console.log("Test checkout closed")

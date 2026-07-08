@@ -67,7 +67,7 @@ const Header = () => {
                           to={child.path}
                           className={cn(
                             "w-full cursor-pointer",
-                            isActive(child.path) && "text-primary font-medium"
+                            isActive(child.path) && "text-primary font-med\ium"
                           )}
                         >
                           {child.label}
