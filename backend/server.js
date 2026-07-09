@@ -244,6 +244,7 @@ app.post("/create-subscription", async (req, res) => {
       planType,
       childrenCount,
       customAmount,
+      paymentMethod,
     } = req.body;
 
     // Input validation
@@ -288,10 +289,12 @@ app.post("/create-subscription", async (req, res) => {
     ===============================
     */
 
+    const totalCount = paymentMethod === "upi" ? 114 : 240;
+
     const subscription = await razorpay.subscriptions.create({
       plan_id: planId,
       customer_notify: 1,
-      total_count: 1200,
+      total_count: totalCount,
       notes: {
         full_name: fullName,
         email: email,

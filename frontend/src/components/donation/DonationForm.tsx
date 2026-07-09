@@ -252,6 +252,7 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
           planType: selectedTier,
           childrenCount: numberOfChildren,
           customAmount: selectedTier === "custom" ? customAmount : null,
+          paymentMethod: "card",
         }),
       });
 
@@ -308,6 +309,7 @@ const DonationForm = ({ mode = "all" }: { mode?: "all" | "upi" }) => {
           planType: selectedTier,
           childrenCount: numberOfChildren,
           customAmount: selectedTier === "custom" ? customAmount : null,
+          paymentMethod: "upi",
         }),
       });
 
