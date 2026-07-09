@@ -33,6 +33,45 @@ app.use(
 
     const event = JSON.parse(body);
 
+    // Helper to safely extract required schema fields for new inserts
+    const getSetOnInsert = (evt) => {
+      const subscription = evt.payload.subscription?.entity || {};
+      const payment = evt.payload.payment?.entity || {};
+      const notes = subscription.notes || payment.notes || {};
+      
+      return {
+        full_name: notes.full_name || "Unknown (created via webhook)",
+        email: payment.email || notes.email || "unknown@webhook.local",
+        phone: payment.contact || notes.phone || "0000000000",
+        amount: payment.amount ? payment.amount / 100 : 0
+      };
+    };
+
+    // 1. Subscription Activated
+    if (event.event === "subscription.activated") {
+      const subscriptionId = event.payload.subscription.entity.id;
+      console.log("✅ Subscription activated:", subscriptionId);
+
+      try {
+        const result = await Donation.findOneAndUpdate(
+          { razorpay_subscription_id: subscriptionId },
+          { 
+            $set: { payment_status: "active" },
+            $setOnInsert: getSetOnInsert(event)
+          },
+          { upsert: true, runValidators: true }
+        );
+        
+        if (!result) {
+          console.warn(`⚠️ WARNING: Created new Donation record via webhook upsert for subscription ${subscriptionId} (Event: activated). Placeholder values were used and may need manual correction.`);
+        }
+        console.log("✅ Donation status updated to active for:", subscriptionId);
+      } catch (err) {
+        console.error("❌ Failed to update active status:", err.message);
+      }
+    }
+
+    // 2. Subscription Charged
     if (event.event === "subscription.charged") {
       const subscriptionId = event.payload.subscription.entity.id;
       const paymentId = event.payload.payment.entity.id;
@@ -41,7 +80,7 @@ app.use(
       console.log("✅ Subscription charged:", subscriptionId, "| Payment:", paymentId, "| Amount: ₹" + chargedAmount);
 
       try {
-        await Donation.findOneAndUpdate(
+        const result = await Donation.findOneAndUpdate(
           { razorpay_subscription_id: subscriptionId },
           {
             $set: { payment_status: "active" },
@@ -51,25 +90,40 @@ app.use(
                 amount: chargedAmount,
                 charged_at: new Date()
               }
-            }
-          }
+            },
+            $setOnInsert: getSetOnInsert(event)
+          },
+          { upsert: true, runValidators: true }
         );
+
+        if (!result) {
+          console.warn(`⚠️ WARNING: Created new Donation record via webhook upsert for subscription ${subscriptionId} (Event: charged). Placeholder values were used and may need manual correction.`);
+        }
         console.log("✅ Recurring payment recorded for subscription:", subscriptionId);
       } catch (err) {
         console.error("❌ Failed to record recurring payment:", err.message);
       }
     }
 
+    // 3. Payment Failed
     if (event.event === "payment.failed") {
       const paymentId = event.payload.payment.entity.id;
       const subscriptionId = event.payload.payment.entity.subscription_id;
       console.log("❌ Payment failed:", paymentId, "| Subscription:", subscriptionId);
       if (subscriptionId) {
         try {
-          await Donation.findOneAndUpdate(
+          const result = await Donation.findOneAndUpdate(
             { razorpay_subscription_id: subscriptionId },
-            { $set: { payment_status: "payment_failed" } }
+            { 
+              $set: { payment_status: "payment_failed" },
+              $setOnInsert: getSetOnInsert(event)
+            },
+            { upsert: true, runValidators: true }
           );
+
+          if (!result) {
+            console.warn(`⚠️ WARNING: Created new Donation record via webhook upsert for subscription ${subscriptionId} (Event: payment.failed). Placeholder values were used and may need manual correction.`);
+          }
           console.log("⚠️ Donation status updated to payment_failed for:", subscriptionId);
         } catch (err) {
           console.error("❌ Failed to update payment_failed status:", err.message);
@@ -77,28 +131,46 @@ app.use(
       }
     }
 
+    // 4. Subscription Halted
     if (event.event === "subscription.halted") {
       const subscriptionId = event.payload.subscription.entity.id;
       console.log("🛑 Subscription halted:", subscriptionId);
       try {
-        await Donation.findOneAndUpdate(
+        const result = await Donation.findOneAndUpdate(
           { razorpay_subscription_id: subscriptionId },
-          { $set: { payment_status: "halted" } }
+          { 
+            $set: { payment_status: "halted" },
+            $setOnInsert: getSetOnInsert(event)
+          },
+          { upsert: true, runValidators: true }
         );
+
+        if (!result) {
+          console.warn(`⚠️ WARNING: Created new Donation record via webhook upsert for subscription ${subscriptionId} (Event: halted). Placeholder values were used and may need manual correction.`);
+        }
         console.log("⚠️ Donation status updated to halted for:", subscriptionId);
       } catch (err) {
         console.error("❌ Failed to update halted status:", err.message);
       }
     }
 
+    // 5. Subscription Cancelled
     if (event.event === "subscription.cancelled") {
       const subscriptionId = event.payload.subscription.entity.id;
       console.log("🚫 Subscription cancelled:", subscriptionId);
       try {
-        await Donation.findOneAndUpdate(
+        const result = await Donation.findOneAndUpdate(
           { razorpay_subscription_id: subscriptionId },
-          { $set: { payment_status: "cancelled" } }
+          { 
+            $set: { payment_status: "cancelled" },
+            $setOnInsert: getSetOnInsert(event)
+          },
+          { upsert: true, runValidators: true }
         );
+
+        if (!result) {
+          console.warn(`⚠️ WARNING: Created new Donation record via webhook upsert for subscription ${subscriptionId} (Event: cancelled). Placeholder values were used and may need manual correction.`);
+        }
         console.log("⚠️ Donation status updated to cancelled for:", subscriptionId);
       } catch (err) {
         console.error("❌ Failed to update cancelled status:", err.message);
@@ -158,7 +230,7 @@ const getOrCreatePlan = async (amount) => {
 /*
 ===============================
 CREATE SUBSCRIPTION
-(Does NOT save to DB — payment not yet made)
+(Saves "pending" record to DB immediately)
 ===============================
 */
 
@@ -220,7 +292,37 @@ app.post("/create-subscription", async (req, res) => {
       plan_id: planId,
       customer_notify: 1,
       total_count: 1200,
+      notes: {
+        full_name: fullName,
+        email: email,
+        phone: phone,
+        pan: pan || "",
+        plan_type: planType,
+        children_count: String(childrenCount),
+        amount: String(finalAmount)
+      }
     });
+
+    // Create a pending record in MongoDB
+    try {
+      const pendingDonation = new Donation({
+        full_name: fullName,
+        email: email,
+        phone: phone,
+        pan: pan,
+        plan_type: planType,
+        children_count: childrenCount,
+        amount: finalAmount,
+        razorpay_subscription_id: subscription.id,
+        payment_mode: "autopay",
+        payment_status: "pending",
+      });
+      await pendingDonation.save();
+      console.log("✅ Pending donation saved — ID:", pendingDonation._id);
+    } catch (dbError) {
+      console.error(`⚠️ Failed to save pending record for subscription ${subscription.id}:`, dbError.message);
+      // Do not throw error here, so the frontend still receives the subscription payload
+    }
 
     // Return subscription ID to the frontend
     res.json({
@@ -288,7 +390,7 @@ app.post("/create-test-subscription", async (req, res) => {
 
 /*
 ===============================
-VERIFY SUBSCRIPTION + SAVE TO DB
+VERIFY SUBSCRIPTION + SAVE/UPDATE TO DB
 (Called by frontend after Razorpay payment handler fires)
 ===============================
 */
@@ -329,32 +431,73 @@ app.post("/verify-subscription", async (req, res) => {
       return res.status(400).json({ success: false, error: "Invalid signature" });
     }
 
-    // Signature valid — save donation to DB
-    const donation = new Donation({
-      full_name: fullName,
-      email: email,
-      phone: phone,
-      pan: pan,
-      plan_type: planType,
-      children_count: childrenCount,
-      amount: amount,
-      area_of_stay: areaOfStay,
-      address_line_1: addressLine1,
-      address_line_2: addressLine2,
-      pincode: pincode,
-      city: city,
-      locality: locality,
-      state: state,
-      country: country,
-      wants_80g: wants80G,
-      razorpay_subscription_id: razorpay_subscription_id,
-      payment_mode: "autopay",
-      payment_status: "active",
-    });
-    await donation.save();
-    console.log("✅ DONATION SAVED — ID:", donation._id, "to DB:", mongoose.connection.db.databaseName, "on host:", mongoose.connection.host);
+    // Update Razorpay subscription notes with the full data payload
+    try {
+      await razorpay.subscriptions.update(razorpay_subscription_id, {
+        notes: {
+          full_name: fullName,
+          email: email,
+          phone: phone,
+          pan: pan || "",
+          plan_type: planType,
+          children_count: String(childrenCount),
+          amount: String(amount),
+          area_of_stay: areaOfStay || "",
+          address: [addressLine1, addressLine2].filter(Boolean).join(", "),
+          pincode: pincode || "",
+          city: city || "",
+          locality: locality || "",
+          state: state || "",
+          country: country || "",
+          wants_80g: String(wants80G)
+        }
+      });
+      console.log("✅ Razorpay subscription notes updated:", razorpay_subscription_id);
+    } catch (notesErr) {
+      console.warn("⚠️ Failed to update Razorpay subscription notes:", notesErr.message);
+      // We don't throw here to ensure the local DB record is still updated successfully
+    }
 
-    res.json({ success: true });
+    // Signature valid — update existing pending donation, or create if missing (fallback)
+    try {
+      const updateData = {
+        full_name: fullName,
+        email: email,
+        phone: phone,
+        pan: pan,
+        plan_type: planType,
+        children_count: childrenCount,
+        amount: amount,
+        area_of_stay: areaOfStay,
+        address_line_1: addressLine1,
+        address_line_2: addressLine2,
+        pincode: pincode,
+        city: city,
+        locality: locality,
+        state: state,
+        country: country,
+        wants_80g: wants80G,
+        payment_mode: "autopay",
+        payment_status: "active",
+      };
+
+      const updatedDonation = await Donation.findOneAndUpdate(
+        { razorpay_subscription_id: razorpay_subscription_id },
+        { $set: updateData },
+        { new: true, upsert: true, runValidators: true }
+      );
+
+      console.log(
+        "✅ DONATION VERIFIED & UPDATED — ID:", 
+        updatedDonation._id, 
+        "in DB:", mongoose.connection.db.databaseName
+      );
+
+      res.json({ success: true });
+    } catch (dbError) {
+      console.error("❌ Failed to update/save verified donation in DB:", dbError.message);
+      res.status(500).json({ success: false, error: dbError.message });
+    }
   } catch (error) {
     console.error("VERIFY ERROR:", error);
     res.status(500).json({ success: false, error: error.message });
