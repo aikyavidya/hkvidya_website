@@ -177,6 +177,98 @@ app.use(
       }
     }
 
+    // 6. Subscription Paused
+    if (event.event === "subscription.paused") {
+      const subscriptionId = event.payload.subscription.entity.id;
+      console.log("⏸️ Subscription paused:", subscriptionId);
+      try {
+        const result = await Donation.findOneAndUpdate(
+          { razorpay_subscription_id: subscriptionId },
+          { 
+            $set: { payment_status: "paused" },
+            $setOnInsert: getSetOnInsert(event)
+          },
+          { upsert: true, runValidators: true }
+        );
+
+        if (!result) {
+          console.warn(`⚠️ WARNING: Created new Donation record via webhook upsert for subscription ${subscriptionId} (Event: paused). Placeholder values were used and may need manual correction.`);
+        }
+        console.log("⚠️ Donation status updated to paused for:", subscriptionId);
+      } catch (err) {
+        console.error("❌ Failed to update paused status:", err.message);
+      }
+    }
+
+    // 7. Subscription Resumed
+    if (event.event === "subscription.resumed") {
+      const subscriptionId = event.payload.subscription.entity.id;
+      console.log("▶️ Subscription resumed:", subscriptionId);
+      try {
+        const result = await Donation.findOneAndUpdate(
+          { razorpay_subscription_id: subscriptionId },
+          { 
+            $set: { payment_status: "active" },
+            $setOnInsert: getSetOnInsert(event)
+          },
+          { upsert: true, runValidators: true }
+        );
+
+        if (!result) {
+          console.warn(`⚠️ WARNING: Created new Donation record via webhook upsert for subscription ${subscriptionId} (Event: resumed). Placeholder values were used and may need manual correction.`);
+        }
+        console.log("✅ Donation status updated to active (resumed) for:", subscriptionId);
+      } catch (err) {
+        console.error("❌ Failed to update resumed status:", err.message);
+      }
+    }
+
+    // 8. Subscription Completed
+    if (event.event === "subscription.completed") {
+      const subscriptionId = event.payload.subscription.entity.id;
+      console.log("✅ Subscription completed:", subscriptionId);
+      try {
+        const result = await Donation.findOneAndUpdate(
+          { razorpay_subscription_id: subscriptionId },
+          { 
+            $set: { payment_status: "completed" },
+            $setOnInsert: getSetOnInsert(event)
+          },
+          { upsert: true, runValidators: true }
+        );
+
+        if (!result) {
+          console.warn(`⚠️ WARNING: Created new Donation record via webhook upsert for subscription ${subscriptionId} (Event: completed). Placeholder values were used and may need manual correction.`);
+        }
+        console.log("✅ Donation status updated to completed for:", subscriptionId);
+      } catch (err) {
+        console.error("❌ Failed to update completed status:", err.message);
+      }
+    }
+
+    // 9. Subscription Pending
+    if (event.event === "subscription.pending") {
+      const subscriptionId = event.payload.subscription.entity.id;
+      console.log("⏳ Subscription pending:", subscriptionId);
+      try {
+        const result = await Donation.findOneAndUpdate(
+          { razorpay_subscription_id: subscriptionId },
+          { 
+            $set: { payment_status: "payment_pending" },
+            $setOnInsert: getSetOnInsert(event)
+          },
+          { upsert: true, runValidators: true }
+        );
+
+        if (!result) {
+          console.warn(`⚠️ WARNING: Created new Donation record via webhook upsert for subscription ${subscriptionId} (Event: pending). Placeholder values were used and may need manual correction.`);
+        }
+        console.log("⚠️ Donation status updated to payment_pending for:", subscriptionId);
+      } catch (err) {
+        console.error("❌ Failed to update payment_pending status:", err.message);
+      }
+    }
+
     res.json({ status: "ok" });
   }
 );
