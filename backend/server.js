@@ -549,7 +549,7 @@ app.post("/verify-subscription", async (req, res) => {
       });
       console.log("✅ Razorpay subscription notes updated:", razorpay_subscription_id);
     } catch (notesErr) {
-      console.warn("⚠️ Failed to update Razorpay subscription notes:", notesErr.message);
+      console.warn("⚠️ Failed to update Razorpay subscription notes:", notesErr.error?.description || notesErr);
       // We don't throw here to ensure the local DB record is still updated successfully
     }
 
