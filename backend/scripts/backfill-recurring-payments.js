@@ -82,27 +82,44 @@ async function backfillRecurringPayments() {
         });
       }
 
+      // Fetch the true start date from Razorpay
+      let razorpayStartDate = null;
+      try {
+        const rzpSub = await razorpay.subscriptions.fetch(subId);
+        if (rzpSub && rzpSub.created_at) {
+          razorpayStartDate = new Date(rzpSub.created_at * 1000);
+          console.log(`Updated start date for ${subId}: ${razorpayStartDate}`);
+        }
+        await sleep(300); // Rate limiting
+      } catch (err) {
+        console.warn(`⚠️ Razorpay subscription fetch failed for ${subId}:`, err.message);
+      }
+
       // Compare current DB array length with the built array length
       const currentLength = subDoc.recurring_payments ? subDoc.recurring_payments.length : 0;
       
-      if (currentLength !== builtArray.length) {
+      if (currentLength !== builtArray.length || razorpayStartDate) {
         metrics.totalDiffFound++;
-        console.log(`[DIFF] Subscription: ${subId} | Donor: ${subDoc.full_name}`);
-        console.log(`       DB Length: ${currentLength} -> New Length: ${builtArray.length} (Ready to update)`);
+        console.log(`[DIFF/UPDATE] Subscription: ${subId} | Donor: ${subDoc.full_name}`);
+        if (currentLength !== builtArray.length) {
+          console.log(`       DB Length: ${currentLength} -> New Length: ${builtArray.length} (Ready to update)`);
+        }
         
-        // --- DRY RUN: Database update is commented out ---
-        /*
+        // LIVE UPDATE: Database update is active
         try {
+          const updateFields = {};
+          if (currentLength !== builtArray.length) updateFields.recurring_payments = builtArray;
+          if (razorpayStartDate) updateFields.razorpay_start_at = razorpayStartDate;
+
           await Donation.findOneAndUpdate(
             { razorpay_subscription_id: subId },
-            { $set: { recurring_payments: builtArray } },
+            { $set: updateFields },
             { runValidators: true }
           );
         } catch (updateErr) {
           console.error(`❌ Update failed for ${subId}:`, updateErr.message);
           metrics.updateErrors++;
         }
-        */
       }
     }
 

@@ -19,6 +19,7 @@ const donationSchema = new mongoose.Schema({
   wants_80g:      { type: Boolean, default: false },
   razorpay_order_id: { type: String },
   razorpay_subscription_id: { type: String, unique: true, sparse: true },
+  razorpay_start_at: { type: Date },
   payment_mode: { type: String },
   payment_status: { type: String, default: "pending" },
   recurring_payments: {
